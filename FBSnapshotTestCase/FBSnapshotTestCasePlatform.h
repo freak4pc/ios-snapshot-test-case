@@ -14,6 +14,13 @@
 extern "C" {
 #endif
 
+typedef NS_OPTIONS(NSUInteger, FBSnapshotTestCaseAgnosticOption) {
+  FBSnapshotTestCaseAgnosticOptionNone = 1 << 0,
+  FBSnapshotTestCaseAgnosticOptionDevice = 1 << 1,
+  FBSnapshotTestCaseAgnosticOptionOS = 1 << 2,
+  FBSnapshotTestCaseAgnosticOptionScreenSize = 1 << 3
+};
+
 /**
  Returns a Boolean value that indicates whether the snapshot test is running in 64Bit.
  This method is a convenience for creating the suffixes set based on the architecture
@@ -38,6 +45,8 @@ NSOrderedSet *FBSnapshotTestCaseDefaultSuffixes(void);
  @returns An @c NSString object containing the passed @c fileName with the device model, OS and screen size appended at the end.
  */
 NSString *FBDeviceAgnosticNormalizedFileName(NSString *fileName);
+
+NSString *FBDeviceAgnosticNormalizedFileNameFromOption(NSString *fileName, FBSnapshotTestCaseAgnosticOption option);
 
 #ifdef __cplusplus
 }

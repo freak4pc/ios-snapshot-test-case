@@ -35,7 +35,7 @@ NSOrderedSet *FBSnapshotTestCaseDefaultSuffixes(void)
 NSString *FBDeviceAgnosticNormalizedFileName(NSString *fileName)
 {
   UIDevice *device = [UIDevice currentDevice];
-  UIWindow *keyWindow = [[UIApplication sharedApplication] fb_strictKeyWindow];
+  UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
   CGSize screenSize = keyWindow.bounds.size;
   NSString *os = device.systemVersion;
   
@@ -47,5 +47,33 @@ NSString *FBDeviceAgnosticNormalizedFileName(NSString *fileName)
   NSArray *validComponents = [fileName componentsSeparatedByCharactersInSet:invalidCharacters];
   fileName = [validComponents componentsJoinedByString:@"_"];
   
+  return fileName;
+}
+
+NSString *FBDeviceAgnosticNormalizedFileNameFromOption(NSString *fileName, FBSnapshotTestCaseAgnosticOption option)
+{
+  if ((option & FBSnapshotTestCaseAgnosticOptionDevice) == FBSnapshotTestCaseAgnosticOptionDevice) {
+    UIDevice *device = [UIDevice currentDevice];
+    fileName = [fileName stringByAppendingFormat:@"_%@", device.model];
+  }
+
+  if ((option & FBSnapshotTestCaseAgnosticOptionOS) == FBSnapshotTestCaseAgnosticOptionOS) {
+    UIDevice *device = [UIDevice currentDevice];
+    NSString *os = device.systemVersion;
+    fileName = [fileName stringByAppendingFormat:@"_%@", os];
+  }
+
+  if ((option & FBSnapshotTestCaseAgnosticOptionScreenSize) == FBSnapshotTestCaseAgnosticOptionScreenSize) {
+    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
+    CGSize screenSize = keyWindow.bounds.size;
+    fileName = [fileName stringByAppendingFormat:@"_%.0fx%.0f", screenSize.width, screenSize.height];
+  }
+
+  NSMutableCharacterSet *invalidCharacters = [NSMutableCharacterSet new];
+  [invalidCharacters formUnionWithCharacterSet:[NSCharacterSet whitespaceCharacterSet]];
+  [invalidCharacters formUnionWithCharacterSet:[NSCharacterSet punctuationCharacterSet]];
+  NSArray *validComponents = [fileName componentsSeparatedByCharactersInSet:invalidCharacters];
+  fileName = [validComponents componentsJoinedByString:@"_"];
+
   return fileName;
 }

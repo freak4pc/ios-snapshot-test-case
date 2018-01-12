@@ -47,7 +47,8 @@ typedef NS_ENUM(NSUInteger, FBTestSnapshotFileNameType) {
   if (self = [super init]) {
     _testName = [testName copy];
     _deviceAgnostic = NO;
-    
+    _agnosticOptions = FBSnapshotTestCaseAgnosticOptionNone;
+
     _fileManager = [[NSFileManager alloc] init];
   }
   return self;
@@ -57,7 +58,7 @@ typedef NS_ENUM(NSUInteger, FBTestSnapshotFileNameType) {
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"%@ %@", [super description], _referenceImagesDirectory];
+  return [NSString stringWithFormat:@"%@ %@ %@", [super description], _referenceImagesDirectory, _imageDiffDirectory];
 }
 
 #pragma mark - Public API
@@ -133,13 +134,13 @@ typedef NS_ENUM(NSUInteger, FBTestSnapshotFileNameType) {
   if (sameImageDimensions && [referenceImage fb_compareWithImage:image tolerance:tolerance]) {
     return YES;
   }
-  
+
   if (NULL != errorPtr) {
     NSString *errorDescription = sameImageDimensions ? @"Images different" : @"Images different sizes";
     NSString *errorReason = sameImageDimensions ? [NSString stringWithFormat:@"image pixels differed by more than %.2f%% from the reference image", tolerance * 100]
                                                 : [NSString stringWithFormat:@"referenceImage:%@, image:%@", NSStringFromCGSize(referenceImage.size), NSStringFromCGSize(image.size)];
     FBSnapshotTestControllerErrorCode errorCode = sameImageDimensions ? FBSnapshotTestControllerErrorCodeImagesDifferent : FBSnapshotTestControllerErrorCodeImagesDifferentSizes;
-    
+
     *errorPtr = [NSError errorWithDomain:FBSnapshotTestControllerErrorDomain
                                     code:errorCode
                                 userInfo:@{
@@ -232,11 +233,14 @@ typedef NS_ENUM(NSUInteger, FBTestSnapshotFileNameType) {
   if (0 < identifier.length) {
     fileName = [fileName stringByAppendingFormat:@"_%@", identifier];
   }
-  
+
+  BOOL noAgnosticOption = (self.agnosticOptions & FBSnapshotTestCaseAgnosticOptionNone) == FBSnapshotTestCaseAgnosticOptionNone;
   if (self.isDeviceAgnostic) {
     fileName = FBDeviceAgnosticNormalizedFileName(fileName);
+  } else if (!noAgnosticOption) {
+    fileName = FBDeviceAgnosticNormalizedFileNameFromOption(fileName, self.agnosticOptions);
   }
-  
+
   if ([[UIScreen mainScreen] scale] > 1) {
     fileName = [fileName stringByAppendingFormat:@"@%.fx", [[UIScreen mainScreen] scale]];
   }
@@ -265,6 +269,11 @@ typedef NS_ENUM(NSUInteger, FBTestSnapshotFileNameType) {
   NSString *folderPath = NSTemporaryDirectory();
   if (getenv("IMAGE_DIFF_DIR")) {
     folderPath = @(getenv("IMAGE_DIFF_DIR"));
+  } else if ([_imageDiffDirectory length] > 0) {
+    folderPath = _imageDiffDirectory;
+  } else if (getenv("SIMULATOR_HOST_HOME")) {
+    // default to the desktop, not very useful putting them in a simulator temp directory
+    folderPath = [NSString stringWithFormat:@"%s/Desktop/FailedSnapshotTests", getenv("SIMULATOR_HOST_HOME")];
   }
   NSString *filePath = [folderPath stringByAppendingPathComponent:_testName];
   filePath = [filePath stringByAppendingPathComponent:fileName];

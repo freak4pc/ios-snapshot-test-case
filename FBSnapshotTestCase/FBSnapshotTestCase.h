@@ -101,6 +101,17 @@
 @property (readwrite, nonatomic, assign, getter=isDeviceAgnostic) BOOL deviceAgnostic;
 
 /**
+ When set, allows fine-grained control over how agnostic you want the file names to be.
+
+ Allows you to combine which agnostic options you want in your snapshot file names.
+
+ The default value is FBSnapshotTestCaseAgnosticOptionNone.
+
+ @attention If deviceAgnostic is YES, this bitmask is ignored.
+ */
+@property (readwrite, nonatomic, assign) FBSnapshotTestCaseAgnosticOption agnosticOptions;
+
+/**
  When YES, renders a snapshot of the complete view hierarchy as visible onscreen.
  There are several things that do not work if renderInContext: is used.
  - UIVisualEffect #70
@@ -120,7 +131,6 @@
  @param identifier An optional identifier, used if there are multiple snapshot tests in a given -test method.
  @param suffixes An NSOrderedSet of strings for the different suffixes
  @param tolerance The percentage difference to still count as identical - 0 mean pixel perfect, 1 means I don't care
- @param defaultReferenceDirectory The directory to default to for reference images.
  @returns nil if the comparison (or saving of the reference image) succeeded. Otherwise it contains an error description.
  */
 - (NSString *)snapshotVerifyViewOrLayer:(id)viewOrLayer
